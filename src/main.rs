@@ -1,5 +1,15 @@
 use difference::{Difference, Changeset};
 
+use nom::{
+    IResult,
+    sequence::{delimited, preceded, tuple},
+    character::complete::char,
+    bytes::complete::{is_not, tag},
+    combinator::opt,
+    multi::{many0, separated_list},
+    branch::alt,
+};
+
 #[derive(Debug)]
 struct Correction<'a>{
     before: &'a str,
@@ -14,6 +24,20 @@ fn main() {
         explanation : Some("[this is how it works]"),
     };
     beautify_correction_for_msg(cor);
+    let text = "-  this is the old way\n+ this is the new way(OR)this is a newer way\n[explanation]\n\n";
+    let (i, a) = source_line(text).unwrap();
+    let (i, b) = corrections_line(i).unwrap();
+    let b = b.split("(OR)").collect::<Vec<&str>>();
+    println!("{}", i);
+    println!("{}", a);
+    println!("{:?}", b);
+    let (i, c) = explanation_line(i).unwrap();
+    let cor = Correction {
+        before: a,
+        after: &b,
+        explanation: Some(c),
+    };
+    beautify_correction_for_msg(cor);
 }
 
 fn beautify_correction_for_msg(correc: Correction){
@@ -23,7 +47,7 @@ fn beautify_correction_for_msg(correc: Correction){
         println!();
     }
     match correc.explanation {
-        Some(expl) => println!("_{}_", expl),
+        Some(expl) => println!("_[{}]_", expl),
             None => println!(),
         }
     println!();
@@ -49,4 +73,22 @@ fn strike(text: &str) {
             _ => print!("{}\u{0338}", c),
         }
     }
+}
+
+//NOM
+fn source_line(i: &str) -> IResult<&str, &str>{
+    let minus = tuple((char('-'), many0(char(' ')))); // "-[ ]*"
+    let nl = char('\n');
+    delimited(minus, is_not("\n"), nl)(i)
+}
+
+
+fn corrections_line(i: &str) -> IResult<&str, &str>{
+    let plus = tuple((char('+'), many0(char(' ')))); // "+[ ]*"
+    let nl = char('\n');
+    delimited(plus, is_not("\n"), nl)(i)
+}
+
+fn explanation_line(i:&str) -> IResult<&str, &str>{
+    delimited(char('['), is_not("]"), char(']'))(i) //CAUTION: last coorection or explanation may not end with a new line
 }
