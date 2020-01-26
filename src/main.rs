@@ -1,3 +1,5 @@
+use std::fs;
+use std::env;
 use difference::{Difference, Changeset};
 
 
@@ -20,18 +22,12 @@ struct Correction<'a>{
 }
 
 fn main() {
-    let cor = Correction {
-        before : "a new way",
-        after : vec!["another way", "one way"],
-        explanation : Some("[this is how it works]"),
-    };
-    beautify_correction_for_msg(cor);
-    let text = "-  this is the old way\n+ this is the new way(OR)this is a newer way\n\n\n-bad expression\n+good exprsesion\n[words of explanation]\n";
-    let (i, cors) = parse_all_corrections(text).unwrap();
+    let filename = env::args().skip(1).next().expect("Expected filename as first argument");
+    let contents = fs::read_to_string(filename).expect("Cannot open file");
+    let (_, cors) = parse_all_corrections(&contents).unwrap();
     for cor in cors {
         beautify_correction_for_msg(cor);
     }
-    println!(">{}<", i);
 }
 
 fn beautify_correction_for_msg(correc: Correction){
@@ -47,13 +43,15 @@ fn beautify_correction_for_msg(correc: Correction){
 }
 
 fn beautify_for_msg(chngset: Changeset){
-    for c in chngset.diffs {
+    for (i,c) in chngset.diffs.iter().enumerate() {
+        if i != 0 {
+            print!(" ");
+        }
         match c {
             Difference::Same(s) => print!("{}", s),
             Difference::Add(a) => print!("*{}*", a),
             Difference::Rem(r) => strike(&r),
         }
-        print!(" ");
     }
 }
 
