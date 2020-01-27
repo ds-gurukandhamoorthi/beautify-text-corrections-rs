@@ -107,9 +107,7 @@ fn beautify_for_msg(chngset: Changeset){
 fn strike(text: &str) {
     for c in text.chars() {
         match c {
-            '.' => {print!("{}", c)},
-            ',' => {print!("{}", c)},
-            ' ' => {print!("{}", c)},
+            '.' | ',' | ' ' => {print!("{}", c)},
             _ => print!("{}\u{0338}", c),
         }
     }
