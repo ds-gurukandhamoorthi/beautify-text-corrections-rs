@@ -58,12 +58,12 @@ fn main() {
     let outformat = args.next();
     let contents = fs::read_to_string(&filename).expect("Cannot open file");
     let (_, cors) = parse_all_corrections(&contents).unwrap();
-    let mut to_default_message_format = true;
-    if let Some(fmt) = outformat {
-        if fmt == "html" || fmt == "htm" {
-            to_default_message_format = false;
-        }
-    }
+    let to_default_message_format =
+        if let Some(fmt) = outformat {
+            !(fmt == "html" || fmt == "htm")
+        }else {
+            true
+        };
     if to_default_message_format{
         for cor in cors {
             beautify_correction_for_msg(cor);
