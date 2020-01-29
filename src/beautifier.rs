@@ -89,3 +89,19 @@ fn beautify_for_inline_html(chngset: Changeset) {
         }
     }
 }
+
+pub fn beautify_corrections(correcs: Vec<Correction>, format: &str, title: &str) {
+    if format == "msg" {
+        for cor in correcs {
+            beautify_correction_for_msg(cor);
+        }
+    } else if format == "html" {
+        println!("{}", START_HTML1);
+        println!("{}", title);
+        println!("{}", START_HTML2);
+        for cor in correcs {
+            beautify_correction_for_inline_html(cor);
+        }
+        println!("{}", END_HTML);
+    }
+}
