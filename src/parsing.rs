@@ -1,7 +1,7 @@
 //NOM
 use crate::Correction;
 use nom::{
-    bytes::complete::is_not,
+    bytes::complete::{is_not, tag},
     character::complete::char,
     combinator::opt,
     multi::{many0, separated_list},
@@ -23,8 +23,8 @@ fn corrections_line(i: &str) -> IResult<&str, Vec<&str>> {
 }
 
 fn explanation_line(i: &str) -> IResult<&str, Option<&str>> {
-    let expl_end = tuple((char(']'), many0(char('\n')))); // "-[ ]*"
-    opt(delimited(char('['), is_not("]"), expl_end))(i) //CAUTION: last coorection or explanation may not end with a new line
+    let expl_end = tag("]\n");
+    opt(delimited(char('['), is_not("]"), expl_end))(i) //CAUTION: last coorection or explanation is expected to end with a new line. which is the normal use-case.
 }
 
 fn parse_a_correction(i: &str) -> IResult<&str, Correction> {
@@ -43,3 +43,32 @@ pub fn parse_all_corrections(i: &str) -> IResult<&str, Vec<Correction>> {
     let (i, c) = separated_list(char('\n'), parse_a_correction)(i).unwrap();
     Ok((i, c))
 }
+
+#[test]
+fn parses_a_correction_preceded_by_whitespace(){
+    let text = r##"
+
+- bad text
++ correct text
+"##;
+    let result = parse_a_correction(text).ok().unwrap().1;
+    let expected = Correction{before: "bad text", after: vec!["correct text"], explanation:None};
+    assert_eq!(result.before, expected.before);
+    assert_eq!(result.after, expected.after);
+    assert_eq!(result.explanation, expected.explanation);
+}
+
+// NOTE: This may not be needed as files always ends with \n. Even echo "abc" > test; then test
+// contains "abc\n"
+// #[test]
+// fn parses_a_correction_without_explanation_not_ending_with_newline(){
+//     let text = r##"
+
+// - bad text
+// + correct text"##;
+//     let result = parse_a_correction(text).ok().unwrap().1;
+//     let expected = Correction{before: "bad text", after: vec!["correct text"], explanation:None};
+//     assert_eq!(result.before, expected.before);
+//     assert_eq!(result.after, expected.after);
+//     assert_eq!(result.explanation, expected.explanation);
+// }
